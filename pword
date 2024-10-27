@@ -1,0 +1,24 @@
+#!/bin/bash
+PYTHON="python3" # Pode-se modificar esta variavel, se necessario
+PROGRAM="pword.py" # Nao pode modificar esta variavel
+#TO-DO: Validar o número de argumentos antes de chamar o Python (Ver TP02)
+#TO-DO: Validar que o ficheiro $PROGRAM existe antes de chama-lo (Ver TP02)
+${PYTHON} ${PROGRAM} $@
+#./pword [-m c|l|i] [-p n] -w palavra {ficheiros}
+
+#See if there user gave arguments
+ArgumentChecker() { 
+    if [ ! -f "$PROGRAM" ]; then
+        echo "Erro: Este programa nao existe maluco."
+    if [ $# -eq 0 ]; then
+        echo -n "Nao tens argumentos maluco."
+    else
+        for arg in $@
+        do 
+            echo $arg
+        done    
+
+}
+
+ArgumentChecker
+#./pword -m c -p 5 -w "ola" {ficheiro}
