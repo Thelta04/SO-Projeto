@@ -67,7 +67,40 @@ def countWordsTotal(lines):
 #     '''
 #     return len(lines)
         
-    
+def ArgumentsChecker(args):# ISTO ESTA A FUNCIONAR(ate prova contraria :P) MAS PROVALVELMENTE POMOS ITSTO SO NO MAIN POIS USA OS ARGS QUE RECEBE DO SYS
+    """
+    """
+    #options of -m mode
+    c = True
+    l = False
+    i = False
+
+    #options of -p mode
+    n = 0
+
+    #options of -w mode
+    word = ''
+
+    files = []
+
+    for x in args:
+        if x == "-m":
+            if args[args.index(x) + 1] == "c":
+                c = True
+            elif args[args.index(x) + 1] == "l":
+                l = True
+                c = False
+            elif args[args.index(x) + 1] == "i":
+                i = True
+                c = False
+        elif x == '-p':
+            n = int(args[args.index(x) + 1])
+        elif x == "-w":
+            word = args[args.index(x) + 1]
+        elif ".txt" in x:
+            files.append(x)
+
+
 def searchWordCount(lines, search):
     wordsList = [word.lower() for line in lines for word in line.split()]
     counter = 0
