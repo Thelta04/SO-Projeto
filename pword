@@ -42,7 +42,7 @@ fi
 
 #Checks if the number of processes is greater or equal of the number of files
 if [ "$process_number" -lt "$file_count" ];then
-    echo "The number of processes needs to be less or equal the amount of files you give."
+    echo "The number of processes needs to be more or equal the amount of files you give."
     exit 1
 fi    
 ${PYTHON} ${PROGRAM} $@

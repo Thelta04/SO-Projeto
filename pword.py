@@ -6,11 +6,13 @@
 
 import sys, os, time
 from multiprocessing import Process
+import string
 
 
 #Global Variables
 punc ='''!.,;?'''
-#punc = '''!"#$%&'()*+,./:;<=>?@[\\]^_`{|}~'''
+punc = '''!"#$%&'()*+,./:;<=>?@[]^_`{|}~-'''
+
 
 
 #Open file and convert it to a list of all lines, without punctuation or symbols.
@@ -31,8 +33,6 @@ def filesToArray(*files):
             
         with open(file, "r", encoding="utf-8") as f:
             linesArray += f.readlines()
-            print("estou aqui")
-            
         
     return linesArray
         
@@ -52,7 +52,11 @@ def count_total(lines, search):
     """
     counter = 0
     for line in lines:
-        counter += line.count(search.lower())
+        line = line.strip().lower()
+        words = line.split()
+        for word in words:
+            if search.lower() in word:
+                counter += 1
 
     print("Process " + str(os.getpid()) + ": Counted " + str(counter))
 
@@ -78,13 +82,8 @@ def count_lines(lines, search):
     #Format line to remove punctuation and lower all letters.
     for line in lines:
         line = line.strip().lower()
-        #Removes the pontuation
-        for char in line:
-            if char in punc:
-                line = line.replace(char, "")
-        
-        i += 1
-                    
+        line.translate(None, string.punctuation)
+        #Verify if
         if search in line:
             counter += 1
     
@@ -105,54 +104,24 @@ def count_isolated(lines, search):
     Ensures:
     Print an int of the number of times the search word appears in the file.
     '''
-    i = 0
+    counter = 0
     for line in lines:
         line = line.strip().lower()
-        #Removes the pontuation
+
+        #Removes the punctuation
         for char in line:
-            if char in punc:
+            if char in string.punctuation:
                 line = line.replace(char, "")
-        lines[i] = line
-        i += 1
 
-    wordsList = [word.lower() for line in lines for word in line.split()]
-    counter = 0
-    search = search.lower()
-    for word in wordsList:
-        if word == search:
-            counter +=1
+        words = line.split()
+        for word in words:
+            if search.lower() == word:
+                counter += 1
 
-    print("Process " + str(os.getpid()) + ": Counted " + str(counter))
-
-
-#Divides the number of lines of the txt file for the number of processes
-
-# def divide_work(lines, n_processes):
-#     '''
-#     Splits the list of lines into approximately equal chunks for each process.
-
-#     Requires:
-#     lines is a list of all lines from the files;
-#     n_processes is a int with the number of processes.
-
-#     Ensures:
-#     Returns a list of lists, where each sublist is a chunk of lines to be assigned to one process.
-#     '''
-    
-#     chunk_size = (len(lines) + n_processes - 1) // n_processes
-
-#     for i in range(n_processes):
-#         start_index = i * chunk_size
-#         end_index = min(start_index + chunk_size, len(lines))
-#         if start_index < end_index:
-#             chunk = lines[start_index:end_index]
-#             count_total(chunk)
-            
-#     return [lines[i:i + chunk_size] for i in range(0, len(lines), chunk_size)]
+    print("Process " + str(os.getpid()) + ": Counted: " + str(counter))
 
 
 #Selects the operation and runs the process
-
 def main(args):
     '''
     Main function that runs the program
@@ -184,7 +153,8 @@ def main(args):
 
     #Create and run processes
     remainder = len(lines_list) % n_process
-
+    
+    #Distribute work to processes evenly
     for i in range(n_process):
         chunk_size = len(lines_list) // n_process
 
@@ -200,12 +170,13 @@ def main(args):
     
     for process in processes:
         process.start()
-        print("started process")
 
     for process in processes:
         process.join()
         
 
-if __name__ == "__main__":
-    main(sys.argv[1:])
+# if __name__ == "__main__":
+#     main(sys.argv[1:])
     
+lines_list = filesToArray("ficheiros_teste/file1.txt")
+count_total(lines_list, "copy")

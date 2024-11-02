@@ -2,13 +2,7 @@ Olá eu sou o Max, e era o rei.
 Mas o sombra veio e sem nada fiquei! 
 Podem ajudar-me? Maximiza-te hehe.
 Sou o Max, btw, o grande max.
-
-
-# file = "teste_pequeno.txt"
-# lines = filesToArray(file)
-# totalWords = count_total(lines,"max")
-# totalSearch = count_isolated(lines,"max")
-# totalLines = count_lines(lines, "max")
-# print(totalWords)
-# print(totalLines)
-# print(totalSearch)
+max
+MaX
+max!
+max?
