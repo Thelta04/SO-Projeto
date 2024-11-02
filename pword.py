@@ -3,13 +3,18 @@
 ### Aluno 2: Gonçalo Seguro (fc62252)
 ### Aluno 3: Dinis Garcia (fc62269)
 
+
 import sys, os, time
 from multiprocessing import Process
 
+
 #Global Variables
-punc = '''!"#$%&'()*+,./:;<=>?@[\\]^_`{|}~'''
+punc ='''!.,;?'''
+#punc = '''!"#$%&'()*+,./:;<=>?@[\\]^_`{|}~'''
+
 
 #Open file and convert it to a list of all lines, without punctuation or symbols.
+
 def filesToArray(*files):
     '''
     Copies the contents from one or multiple .txt files to a list, removing all punctuation and symbols.
@@ -20,129 +25,187 @@ def filesToArray(*files):
     Ensures:
     Returns a list with all the lines of the file without punctuation or symbols.
     '''
+    
     linesArray = []
     for file in files:
             
         with open(file, "r", encoding="utf-8") as f:
             linesArray += f.readlines()
-            i = 0
-            for line in linesArray:
-                line = line.strip()
-                # for char in line:
-                #     if char in punc:
-                #         line = line.replace(char, "")
-                linesArray[i] = line
-                i += 1
+            print("estou aqui")
+            
         
     return linesArray
         
-                    
-#['Olá eu sou o Max e era o rei', 'Mas o sombra veio e sem nada fiquei', 'Podem ajudar-me', 'Sou o Max btw']
-#Sou o Max, btw. -> [linha1, linha2, "Sou o Max btw"]
-
+        
 #Count the words 
 
-def countWordsTotal(lines):
+def count_total(lines, search):
     """
-    Count the total words of the lines in the txt file
+    Count all occurrences of the word in the text, even if the word is repeated.
 
     Requires:
-    A list with the words of txt file
+    lines is a list with the lines in the .txt that will be searched;
+    search is a string form of the word to search for.
 
     Ensures:
-    The total count of the words in that txt file
+    Print an int of all the occurrences of the word in the file.
     """
-    words_total = 0
+    counter = 0
     for line in lines:
-        words = line.split()
-        words_total += len(words)
-    return words_total
+        counter += line.count(search.lower())
+
+    print("Process " + str(os.getpid()) + ": Counted " + str(counter))
 
 
 #Line Counter
 
-# def lineCounter(lines):
-#     '''
-#     conta linhas crl
-#     '''
-#     return len(lines)
+def count_lines(lines, search):
+    '''
+    Count how many distinct lines contain the word.
+
+    Requires:
+    lines is a list with the lines in the .txt that will be searched;
+    search is a string form of the word to search for.
+
+    Ensures:
+    Print an int of all the lines that contain the search word in the file.
+    '''
+    i = 0   
+    counter = 0
+
+    search = search.lower()
+
+    #Format line to remove punctuation and lower all letters.
+    for line in lines:
+        line = line.strip().lower()
+        #Removes the pontuation
+        for char in line:
+            if char in punc:
+                line = line.replace(char, "")
         
-def ArgumentsChecker(args):# ISTO ESTA A FUNCIONAR(ate prova contraria :P) MAS PROVALVELMENTE POMOS ITSTO SO NO MAIN POIS USA OS ARGS QUE RECEBE DO SYS
-    """
-    """
-    #options of -m mode
-    c = True
-    l = False
-    i = False
+        i += 1
+                    
+        if search in line:
+            counter += 1
+    
+    print("Process " + str(os.getpid()) + ": Counted " + str(counter))
+    
+    
+#counts the number of times the word appears in isolation
 
-    #options of -p mode
-    n = 0
+def count_isolated(lines, search):
+    '''
+    Count the times the word appears in the file, bt only when it appears isolated
+    (separated by spaces, punctuation, etc.), excluding cases where the word is part of another word.
 
-    #options of -w mode
-    word = ''
+    Requires:
+    lines is a list with the lines in the .txt that will be searched;
+    search is a str form of the word to search for.
 
-    files = []
+    Ensures:
+    Print an int of the number of times the search word appears in the file.
+    '''
+    i = 0
+    for line in lines:
+        line = line.strip().lower()
+        #Removes the pontuation
+        for char in line:
+            if char in punc:
+                line = line.replace(char, "")
+        lines[i] = line
+        i += 1
 
-    for x in args:
-        if x == "-m":
-            if args[args.index(x) + 1] == "c":
-                c = True
-            elif args[args.index(x) + 1] == "l":
-                l = True
-                c = False
-            elif args[args.index(x) + 1] == "i":
-                i = True
-                c = False
-        elif x == '-p':
-            n = int(args[args.index(x) + 1])
-        elif x == "-w":
-            word = args[args.index(x) + 1]
-        elif ".txt" in x:
-            files.append(x)
-
-
-def searchWordCount(lines, search):
     wordsList = [word.lower() for line in lines for word in line.split()]
     counter = 0
     search = search.lower()
     for word in wordsList:
         if word == search:
             counter +=1
-    return counter
 
-#Criar processos
+    print("Process " + str(os.getpid()) + ": Counted " + str(counter))
 
-file = "ficheiros_teste/file4.txt"
-lines = filesToArray(file)
-totalWords = countWordsTotal(lines)
-totalSearch = searchWordCount(lines,"Douglas")
-print(lines)
-print(totalWords)
-print(len(lines))
-print(totalSearch)
+
+#Divides the number of lines of the txt file for the number of processes
+
+# def divide_work(lines, n_processes):
+#     '''
+#     Splits the list of lines into approximately equal chunks for each process.
+
+#     Requires:
+#     lines is a list of all lines from the files;
+#     n_processes is a int with the number of processes.
+
+#     Ensures:
+#     Returns a list of lists, where each sublist is a chunk of lines to be assigned to one process.
+#     '''
+    
+#     chunk_size = (len(lines) + n_processes - 1) // n_processes
+
+#     for i in range(n_processes):
+#         start_index = i * chunk_size
+#         end_index = min(start_index + chunk_size, len(lines))
+#         if start_index < end_index:
+#             chunk = lines[start_index:end_index]
+#             count_total(chunk)
+            
+#     return [lines[i:i + chunk_size] for i in range(0, len(lines), chunk_size)]
+
+
+#Selects the operation and runs the process
 
 def main(args):
-    
-    print('Programa: pword.py')
-    lines = filesToArray(file)
-    
-    operation = args[0]
-    file = args[1]
+    '''
+    Main function that runs the program
+    '''    
 
+    print('Programa: pword.py')
+
+    #Read arguments sent by .bash script
+    operation = args[0]
+    n_process = int(args[1])
+    search_word = args[2]
+    files = args[3]
+
+    #Global Variables
+    lines_list = filesToArray(files)
+    processes = []
+    start = 0
+    
+    #Define what function to execute
     if operation == "i":
-        counter = searchWordCount(file)
-        print(counter)
+        func = count_isolated
 
     elif operation == "c":
-        totalWords = countWordsTotal(lines)
-        print(f'Total número de palavras: {totalWords}')
+        func = count_total
 
     elif operation == "l":
-        print("Número de linhas: ", len(lines))
-
-    else:
-        print("Operação não reconhecida pelo programa. Use '-c', '-l' ou '-i'")
+        func = count_lines
 
 
-# if __name__ == "__main__":
-#     main(sys.argv[1:])
+    #Create and run processes
+    remainder = len(lines_list) % n_process
+
+    for i in range(n_process):
+        chunk_size = len(lines_list) // n_process
+
+        if remainder != 0:
+            chunk_size + 1
+            remainder -= 1
+
+        chunk = lines_list[start : start + chunk_size]
+
+        start += chunk_size
+
+        processes.append(Process(target=func,args=(chunk, search_word)))
+    
+    for process in processes:
+        process.start()
+        print("started process")
+
+    for process in processes:
+        process.join()
+        
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
+    
