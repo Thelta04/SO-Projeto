@@ -3,20 +3,11 @@
 ### Aluno 2: Gonçalo Seguro (fc62252)
 ### Aluno 3: Dinis Garcia (fc62269)
 
-
+import re
 import sys, os, time
 from multiprocessing import Process
-import string
 
-
-#Global Variables
-punc ='''!.,;?'''
-punc = '''!"#$%&'()*+,./:;<=>?@[]^_`{|}~-'''
-
-
-
-#Open file and convert it to a list of all lines, without punctuation or symbols.
-
+#Open file and convert it to a list of all lines.
 def filesToArray(*files):
     '''
     Copies the contents from one or multiple .txt files to a list, removing all punctuation and symbols.
@@ -36,9 +27,7 @@ def filesToArray(*files):
         
     return linesArray
         
-        
 #Count the words 
-
 def count_total(lines, search):
     """
     Count all occurrences of the word in the text, even if the word is repeated.
@@ -50,15 +39,18 @@ def count_total(lines, search):
     Ensures:
     Print an int of all the occurrences of the word in the file.
     """
+
+    #Start the timer
+    start_time = time.time()
+
     counter = 0
     for line in lines:
         line = line.strip().lower()
-        words = line.split()
-        for word in words:
-            if search.lower() in word:
-                counter += 1
+        counter += line.count(search.lower())
 
-    print("Process " + str(os.getpid()) + ": Counted " + str(counter))
+    elapsed_time = time.time() - start_time
+
+    print("Process " + str(os.getpid()) + ": Counted " + str(counter) + ", took " + str(round(elapsed_time, 1)) + " seconds.")
 
 
 #Line Counter
@@ -74,20 +66,23 @@ def count_lines(lines, search):
     Ensures:
     Print an int of all the lines that contain the search word in the file.
     '''
+
+    #Start the timer
+    start_time = time.time()
+
     i = 0   
     counter = 0
 
     search = search.lower()
 
-    #Format line to remove punctuation and lower all letters.
     for line in lines:
         line = line.strip().lower()
-        line.translate(None, string.punctuation)
-        #Verify if
         if search in line:
             counter += 1
     
-    print("Process " + str(os.getpid()) + ": Counted " + str(counter))
+    elapsed_time = time.time() - start_time
+
+    print("Process " + str(os.getpid()) + ": Counted " + str(counter) + ", took " + str(round(elapsed_time, 1)) + " seconds.")
     
     
 #counts the number of times the word appears in isolation
@@ -102,23 +97,29 @@ def count_isolated(lines, search):
     search is a str form of the word to search for.
 
     Ensures:
-    Print an int of the number of times the search word appears in the file.
+    Print an int of the number of times the search word appears in the file, also says the pid of the process
+    and the time it took to get the result.
     '''
+
+    #Start the timer
+    start_time = time.time()
+
     counter = 0
+    #Create a word pattern to seach using regex. escape() remove special characters
+    #and only consideres words that are surrounded by boundaries (\b) - Case insesitive
+    pattern = r'\b' + re.escape(search.lower()) + r'\b'
+    
     for line in lines:
-        line = line.strip().lower()
+        #Convert line to lowercase for case-insensitivity
+        line = line.lower()
 
-        #Removes the punctuation
-        for char in line:
-            if char in string.punctuation:
-                line = line.replace(char, "")
+        #Count occurrences of the word using regex
+        counter += len(re.findall(pattern, line))
 
-        words = line.split()
-        for word in words:
-            if search.lower() == word:
-                counter += 1
+    elapsed_time = time.time() - start_time
 
-    print("Process " + str(os.getpid()) + ": Counted: " + str(counter))
+
+    print("Process " + str(os.getpid()) + ": Counted " + str(counter) + ", took " + str(round(elapsed_time, 1)) + " seconds.")
 
 
 #Selects the operation and runs the process
@@ -127,7 +128,7 @@ def main(args):
     Main function that runs the program
     '''    
 
-    print('Programa: pword.py')
+    print('Programa: pword.py\n')
 
     #Read arguments sent by .bash script
     operation = args[0]
@@ -175,8 +176,5 @@ def main(args):
         process.join()
         
 
-# if __name__ == "__main__":
-#     main(sys.argv[1:])
-    
-lines_list = filesToArray("ficheiros_teste/file1.txt")
-count_total(lines_list, "copy")
+if __name__ == "__main__":
+    main(sys.argv[1:])
