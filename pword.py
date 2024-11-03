@@ -16,7 +16,7 @@ def filesToArray(*files):
     file is a .txt file, containing the text contents to analyze.
 
     Ensures:
-    Returns a list with all the lines of the file without punctuation or symbols.
+    A list with all the lines of the file without punctuation or symbols.
     '''
     
     linesArray = []
@@ -26,8 +26,10 @@ def filesToArray(*files):
             linesArray += f.readlines()
         
     return linesArray
-        
+
+
 #Count the words 
+
 def count_total(lines, search):
     """
     Count all occurrences of the word in the text, even if the word is repeated.
