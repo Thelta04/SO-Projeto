@@ -8,6 +8,7 @@ import sys, os, time
 from multiprocessing import Process
 
 #Open file and convert it to a list of all lines.
+
 def filesToArray(*files):
     '''
     Copies the contents from one or multiple .txt files to a list, removing all punctuation and symbols.
@@ -125,9 +126,11 @@ def count_isolated(lines, search):
 
 
 #Selects the operation and runs the process
+
 def main(args):
     '''
     Main function that runs the program
+
     '''    
 
     print('Programa: pword.py\n')

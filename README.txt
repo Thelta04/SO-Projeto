@@ -9,7 +9,8 @@
 O pword.py é um programa Python, com um script Bash auxiliar (pword), que permite contar as ocorrências de uma palavra específica 
 em arquivos .txt. As contagens podem ser feitas de três modos diferentes: contagem total de ocorrências, contagem de ocorrências isoladas
 e contagem das linhas distintas onde a palavra aparece.
-
+Para facilitar o nosso modo de testar o programa criámos um ficheiro de nome teste_pequeno.txt, uma vez que os ficheiros txt dados
+são de grande volume.
 
 ### Exemplos de comandos para executar o pword.py:
 1) ./pword -m c -w exemplo -p 2 file1.txt file2.txt
