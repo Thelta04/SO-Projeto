@@ -4,11 +4,12 @@ PROGRAM="pword.py" # Nao pode modificar esta variavel
 #TO-DO: Validar o número de argumentos antes de chamar o Python (Ver TP02)
 #TO-DO: Validar que o ficheiro $PROGRAM existe antes de chama-lo (Ver TP02)
 
-file_true=false
 file_counter=0
-word_true=false
 process_true=false
 process_number=1
+m_mode=c
+w_word=""
+txt_files=""
 
 if [ ! -f "$PROGRAM" ]; then
     echo "Error: This program does not exist"
@@ -18,22 +19,28 @@ else
     if [ $# -eq 0 ]; then
         echo "You need to provide arguments."
         exit 1
-    else # Check if the right arguments were provided
+    else # Check if the right arguments were provided and selects the mode on how the word will be searched
         args=("$@")
         length=${#args[@]}
         for ((i=0; i<length; i++)); do
             arg="${args[i]}"
             if [ -f "$arg" ] && [[ "$arg" == *.txt ]]; then
-                file_true=true 
+                txt_files+="$arg " 
                 ((file_count++))
-            elif [ "$arg" == -w ];then
-                word_true=true
-            elif [ "$arg" == -p ];then
-                process_true=true
-                process_number="${args[i+1]}"
-            fi  
+            fi
+            case $arg in 
+                "-m")
+                    m_mode="${args[i+1]}"
+                    ;;
+                "-w")
+                    w_word="${args[i+1]}"
+                    ;;
+                "-p")
+                    process_number="${args[i+1]}"
+                    ;;
+            esac      
         done
-        if [ "$file_true" = false ] || [ "$word_true" = false ] ; then
+        if [ "$txt_files" = "" ] || [ "$w_word" = "" ] ; then
             echo "The arguments must include a "-w word" argument and a .txt argument."
             exit 1
         fi
@@ -45,5 +52,5 @@ if [ "$process_number" -lt "$file_count" ];then
     echo "The number of processes needs to be more or equal the amount of files you give."
     exit 1
 fi    
-${PYTHON} ${PROGRAM} $@
+${PYTHON} ${PROGRAM} "$m_mode" "$process_number" "$w_word" $txt_files 
 exit 0
