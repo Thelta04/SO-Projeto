@@ -5,7 +5,12 @@
 
 import re
 import sys, os, time
-from multiprocessing import Process
+from multiprocessing import Process, Value, Queue, Lock, Semaphore
+import signal 
+
+counter = Value("i")
+counter.value = 0
+interrupted = Value("b", False)
 
 #Open file and convert it to a list of all lines.
 
@@ -21,16 +26,28 @@ def filesToArray(*files):
     '''
     
     linesArray = []
-    for file in files:
-            
+    for file in files:  
         with open(file, "r", encoding="utf-8") as f:
             linesArray += f.readlines()
         
     return linesArray
 
 
-#Count the words 
+#Signal stop
 
+def signal_handler(sig, frame):
+    """
+    
+    """
+    global interrupted
+    print("\nInterrupção recebida (Ctrl+C). Finalizando processos...")
+    interrupted = True 
+
+
+#Count the words 
+def count_queue():
+    
+    return "ola"
 def count_total(lines, search):
     """
     Count all occurrences of the word in the text, even if the word is repeated.
@@ -43,17 +60,21 @@ def count_total(lines, search):
     Print an int of all the occurrences of the word in the file.
     """
 
+    global counter
+
     #Start the timer
     start_time = time.time()
 
-    counter = 0
     for line in lines:
+        if interrupted.value:
+            break
         line = line.strip().lower()
-        counter += line.count(search.lower())
+        with counter.get_lock():
+            counter.value += line.count(search.lower())
 
     elapsed_time = time.time() - start_time
 
-    print("Process " + str(os.getpid()) + ": Counted " + str(counter) + ", took " + str(round(elapsed_time, 1)) + " seconds.")
+    # print("Process " + str(os.getpid()) + ": Counted " + str(counter) + ", took " + str(round(elapsed_time, 1)) + " seconds.")
 
 
 #Line Counter
@@ -70,22 +91,25 @@ def count_lines(lines, search):
     Print an int of all the lines that contain the search word in the file.
     '''
 
-    #Start the timer
-    start_time = time.time()
-
-    i = 0   
-    counter = 0
-
-    search = search.lower()
-
-    for line in lines:
-        line = line.strip().lower()
-        if search in line:
-            counter += 1
+    # #Start the timer
+    # start_time = time.time()
     
-    elapsed_time = time.time() - start_time
+    
 
-    print("Process " + str(os.getpid()) + ": Counted " + str(counter) + ", took " + str(round(elapsed_time, 1)) + " seconds.")
+    # i = 0   
+    # counter = 0
+
+    # search = search.lower()
+    
+    # elapsed_time = time.time() - start_time
+
+    # print("Process " + str(os.getpid()) + ": Counted " + str(counter) + ", took " + str(round(elapsed_time, 1)) + " seconds.")
+    results = set()
+
+    # for i,line in lines:
+    # line = line.strip().lower()
+    #     if search in line:
+    #         counter += 1
     
     
 #counts the number of times the word appears in isolation
@@ -113,6 +137,8 @@ def count_isolated(lines, search):
     pattern = r'\b' + re.escape(search.lower()) + r'\b'
     
     for line in lines:
+        if interrupted.value:
+            break
         #Convert line to lowercase for case-insensitivity
         line = line.lower()
 
@@ -134,6 +160,11 @@ def main(args):
     '''    
 
     print('Programa: pword.py\n')
+
+    global counter
+
+    # Register the signal handler for SIGINT (Ctrl+C)
+    signal.signal(signal.SIGINT, signal_handler)
 
     #Read arguments sent by .bash script
     operation = args[0]
@@ -179,7 +210,8 @@ def main(args):
 
     for process in processes:
         process.join()
-        
+    
+    print("CONTED:", str(counter.value))
 
 if __name__ == "__main__":
     main(sys.argv[1:])
