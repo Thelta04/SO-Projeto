@@ -16,6 +16,8 @@ process_number=1
 m_mode=c
 w_word=""
 txt_files=""
+interval=3
+log_file=""
 
 if [ ! -f "$PROGRAM" ]; then
     echo "Error: This program does not exist"
@@ -43,6 +45,12 @@ else
                     ;;
                 "-p")
                     process_number="${args[i+1]}"
+                    ;;
+                "-i")
+                    interval="${args[i+1]}"
+                    ;;
+                "-d")
+                    log_file="${args[i+1]}"
                     ;;
             esac      
         done

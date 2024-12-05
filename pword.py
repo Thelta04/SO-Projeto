@@ -5,7 +5,7 @@
 
 import re
 import sys, os, time
-from multiprocessing import Process, Value, Queue, Lock, Semaphore
+from multiprocessing import Process, Value, Queue, Lock, Semaphore, Array
 import signal 
 
 counter = Value("i")
@@ -44,10 +44,7 @@ def signal_handler(sig, frame):
     interrupted = True 
 
 
-#Count the words 
-def count_queue():
-    
-    return "ola"
+
 def count_total(lines, search):
     """
     Count all occurrences of the word in the text, even if the word is repeated.
@@ -91,25 +88,20 @@ def count_lines(lines, search):
     Print an int of all the lines that contain the search word in the file.
     '''
 
-    # #Start the timer
-    # start_time = time.time()
-    
-    
-
-    # i = 0   
-    # counter = 0
-
-    # search = search.lower()
-    
-    # elapsed_time = time.time() - start_time
-
-    # print("Process " + str(os.getpid()) + ": Counted " + str(counter) + ", took " + str(round(elapsed_time, 1)) + " seconds.")
+    counter = Array("i", n_process)
     results = set()
+    
+    for line in lines:
+        line = line.strip().lower()
+        if search in line:
+            results.add(line)
+    #puts the sets into the queue
+    q.put(results)
 
-    # for i,line in lines:
-    # line = line.strip().lower()
-    #     if search in line:
-    #         counter += 1
+    #adds all the sets of each son into a specific inside of the array
+    counter[idex_counter] = len(results)
+
+    print(sum(counter))
     
     
 #counts the number of times the word appears in isolation
