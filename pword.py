@@ -37,11 +37,13 @@ def filesToArray(*files):
 
 def signal_handler(sig, frame):
     """
-    
+    Manipula o sinal SIGINT (Ctrl+C). Ajusta a flag global para interromper o processamento
+    de novos blocos e permite que os processos filhos concluam suas tarefas atuais.
     """
     global interrupted
+    with interrupted.get_lock():
+        interrupted.value = True
     print("\nInterrupção recebida (Ctrl+C). Finalizando processos...")
-    interrupted = True 
 
 
 
@@ -76,34 +78,34 @@ def count_total(lines, search):
 
 #Line Counter
 
-def count_lines(lines, search):
+def count_lines(lines, search, q, counter, index, lock):
     '''
     Count how many distinct lines contain the word.
 
-    Requires:
-    lines is a list with the lines in the .txt that will be searched;
-    search is a string form of the word to search for.
+    Requires: lines is a list of lines from the .txt file to be searched.
+    search is the word to search for in the lines.
+    q is a multiprocessing.Queue for storing sets of lines found by each process.
+    counter is a multiprocessing.Array for partial counts from each process.
+    index is the index in the array to store the current process's result.
+    lock is a multiprocessing.Lock to synchronize updates to shared data.
 
     Ensures:
-    Print an int of all the lines that contain the search word in the file.
+    Adds the count of lines containing the word to the shared array and queue.
     '''
-
-    counter = Array("i", n_process)
     results = set()
-    
+
     for line in lines:
         line = line.strip().lower()
         if search in line:
             results.add(line)
-    #puts the sets into the queue
+
+    # Add the set to the queue
     q.put(results)
 
-    #adds all the sets of each son into a specific inside of the array
-    counter[idex_counter] = len(results)
+    with lock:
+        counter[index] = len(results)
 
-    print(sum(counter))
-    
-    
+
 #counts the number of times the word appears in isolation
 
 def count_isolated(lines, search):
@@ -200,10 +202,14 @@ def main(args):
     for process in processes:
         process.start()
 
-    for process in processes:
-        process.join()
-    
-    print("CONTED:", str(counter.value))
+    try:
+       
+        for process in processes:
+            process.join()
+    except KeyboardInterrupt:
+        print("\nProcessamento interrompido pelo usuário.")
+
+    print(f"Resultados acumulados até o momento: {counter.value}")
 
 if __name__ == "__main__":
     main(sys.argv[1:])
