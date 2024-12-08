@@ -11,6 +11,7 @@ import datetime
 
 processedLines = Value("i", 0)
 interrupted = Value("b", False)
+stop = Value("i", 0)
 lock = Lock() #initializes the lock that will be used throughtout the program
 
 #Open file and convert it to a list of all lines.
@@ -81,8 +82,7 @@ def signal_handler(sig, frame):
     """
     global interrupted
     print("\nInterrupção recebida (Ctrl+C). Finalizando processos...")
-    with lock:
-        interrupted.value = True 
+    interrupted.value = True 
 
 
 def count_total(lines, search):
@@ -103,6 +103,9 @@ def count_total(lines, search):
     for line in lines:
         if not interrupted.value:
             line = line.strip().lower()
+        else:
+            print("Interrupted Process")
+            break
   
 
         lock.acquire() #Enters the critical section 
@@ -140,13 +143,14 @@ def count_lines(lines, search, queue, index_counter, counter_array):
                 
             lock.acquire()#opens the critical section
 
-            #puts the sets into the queue
-            queue.put(results)
             #adds all the sets of each son into a specific inside of the array
             counter_array[index_counter] = len(results)
             processedLines.value += 1
 
             lock.release()#closes it
+        else:
+            print("Interrupted Process")
+            break
     
     lock.acquire()#opens the critical section
         
@@ -154,7 +158,7 @@ def count_lines(lines, search, queue, index_counter, counter_array):
     queue.put(results)
 
     lock.release()#closes it
-    
+
 #counts the number of times the word appears in isolation
 
 def count_isolated(lines, search, queue, index_counter, counter_array):
@@ -180,6 +184,7 @@ def count_isolated(lines, search, queue, index_counter, counter_array):
     
     for line in lines:
         if interrupted.value:
+            print("Interrupted Process")
             break
         #Convert line to lowercase for case-insensitivity
         line = line.lower()
@@ -199,28 +204,11 @@ def count_isolated(lines, search, queue, index_counter, counter_array):
     #Enters the critical section --------
     lock.acquire()
 
-    queue.put(counter)#Adds to the created queue how many times the word was found inside of this block of text
+    queue.put(counter) #Adds to the created queue how many times the word was found inside of this block of text
     
     lock.release()
     #exits the lock --------
-
-
-def worker(lines, search, func, args):
- """
- Worker process: executes a counting function.
- """
-    signal.signal(signal.SIGINT, signal.SIG_IGN)  # Ignorar SIGINT nos filhos
-    func(lines, search, *args)
-
-
-
-def gather_queue(queue, lock):
-    """
-    This function gather all the values that were put on a queue, as a FIFO method, and 
-    makes it that the father adds them all.  ISTO FAZ REFERENCIA A 1 PONTO DO 2.1 DPS DISCUTIR 
-    SE FAZ SENTIDO FAZER UMA FUNCAO FORA DAS OUTRAS OU NAO <<<<<<<<< 
-    """
-
+    
 #Selects the operation and runs the process
 
 def main(args):
@@ -293,13 +281,31 @@ def main(args):
         else:
             processes.append(Process(target=func,args=(chunk, search_word)))  
             
+    #Start everything
     for process in processes:
         process.start()
 
     for process in processes:
         process.join()
     
-    print("COUNTED:", str(counter.value))
+    q.get()
+
+    if operation == "l":
+        print("Total de linhas:", len(total_results))
+
+    elif operation == "i":
+        print("Total de palavras (isoladas):", sum(total_results))
+
+    else:
+        print("Total de palavras:", str(counter.value))
+
+def sigint_C(sig, frame):
+    print("Terminating Processes")
+    stop.value = 1  # Define a flag de interrupção
+    # Não usamos sys.exit() aqui, pois isso pode causar interrupções no processo principal. 
+    # Vamos apenas marcar a flag de interrupção e deixar o processo continuar no lugar certo.
+
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, sigint_C)
     main(sys.argv[1:])
