@@ -14,10 +14,11 @@ e contagem das linhas distintas onde a palavra aparece.
 1) ./pword -m i -p 2 -w exemplo file1.txt file2.txt -> Contagem isolada da palavra "exemplo" nos ficheiros 1 e 2, com dois processos.
 2) ./pword -m l -w teste file3.txt -> Contagem das linhas da palavra "teste" no ficheiro 3, com um processo (omissão).
 3) ./pword -w word file4.txt -> Contagem total (omissão) da palavra "word" no ficheiro 4, com um processo (omissão).
+4) ./pword -d out.txt -i 1 -w copy ficheiros_teste/file1.txt -> A cada 1 segundo, mete no ficheiro "out.txt" os resultados parciais.
 
-4) ./pword -w erro -> Erro: "The arguments must include a -w word argument and a .txt argument."
-5) ./pword -> Erro: "You need to provide arguments."
-6) ./pword -m i -p 3 -w copy ficheiros_teste/file1.txt ficheiros_teste/file4.txt -> Erro: "For multiple files, the number of processes can't be greater that the number of files. Redefining number of processes to be the number of files."
+5) ./pword -w erro -> Erro: "The arguments must include a -w word argument and a .txt argument."
+6) ./pword -> Erro: "You need to provide arguments."
+7) ./pword -m i -p 3 -w copy ficheiros_teste/file1.txt ficheiros_teste/file4.txt -> Erro: "For multiple files, the number of processes can't be greater that the number of files. Redefining number of processes to be the number of files."
 
 ### Limitações da implementação:
 
@@ -25,7 +26,7 @@ e contagem das linhas distintas onde a palavra aparece.
 o que pode resultar num processamento desigual, pois as linhas podem ter tamanhos diferentes. 
 Isso pode fazer com que o tempo de execução de cada processo seja ligeiramente diferente.
 
-- Não é feita a soma total das somas parciais dos processos.
+- Não é confirmada se a soma dos counts no Array e os resultados no Queue são iguais.
 
 
 ### Abordagem para a divisão dos ficheiros:
@@ -40,3 +41,4 @@ Isso pode fazer com que o tempo de execução de cada processo seja ligeiramente
 - O programa considera uma palavra como qualquer sequência de caracteres separado por espaços brancos.
 - Os resultados foram comparados aos de comandos como o grep e o "Ctrl + F" do VSCode, então a implementação segue a mesma destes comandos.
 - Os resultados e tempo de execução de cada processo é exibido juntamente com o resultado da contagem. Esse tempo é medido internamente para cada processo.
+- Mesmo não sendo específicado no enuniciado, o Ctrl+C revela também resultados parciais.

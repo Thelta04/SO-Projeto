@@ -36,8 +36,23 @@ def filesToArray(files):
     return linesArray, fileNumLines
 
 
+#Makes the parcial results
+
 def set_parcial_results(start_time, mode, numLines, numFiles, array = None, log_file = ""):
     """
+    Logs or prints the partial results of the word counting process.
+
+    Requires: 'start_time' (float) is the timestamp when the program started.
+    'mode' (str) is the counting mode ('c', 'i', or 'l').
+    'numLines' (list[int]) is a list of line counts for each file.
+    'numFiles' (int): Total number of files being processed.
+    'array' (optional, multiprocessing.Array): Array of partial results for each process (modes 'i' and 'l').
+    'log_file' (str): File path for logging results. If empty, results are printed to stdout.
+
+    Ensures: The total word or line count ('count_atm') and the number of processed and remaining files.
+    Outputs th results in the format: [timestamp] [elapsed_time] [count_atm] [processedFiles] [remainingFiles]
+    Appends results 
+    
 
     """
     global processedLines
@@ -47,7 +62,7 @@ def set_parcial_results(start_time, mode, numLines, numFiles, array = None, log_
     timestamp = current_time.strftime("%d/%m/%Y-%H:%M:%S")
     elapsed_time = round((time.time() - start_time) * 1000000)
 
-    count_atm = 0
+    count_atm = 0  # Initialize the count accumulator
 
     if mode == "c":
         count_atm = counter.value
@@ -56,29 +71,42 @@ def set_parcial_results(start_time, mode, numLines, numFiles, array = None, log_
         for counter in array:
             count_atm += counter
     
-    lock.acquire()
+    lock.acquire() # Acquire the lock to ensure process-safe access
 
     processedFiles = 0
 
+    # Determine the number of files fully processed
     for lastLine in numLines:
         if processedLines.value >= lastLine:
             processedFiles += 1
 
-    lock.release()
+    lock.release() # Release the lock after accessing shared data
 
     result = f"{timestamp} {elapsed_time} {count_atm} {processedFiles} {numFiles - processedFiles}"
 
+    # Output the result to the log file or stdout
     if log_file != "":
         with open(log_file, 'a') as file:
             file.write(result + "\n")
     else:
         print(result)
 
+    temp = numFiles - processedFiles #Calculates how many files are still pending to be fully processed
+    if temp == 0: 
+        signal.setitimer(signal.ITIMER_REAL, 0)
+
+
 #Signal stop
 
 def signal_handler(sig, frame):
     """
-    
+    Handles the SIGINT signal (Ctrl+C) to interrupt the program.
+
+    Requires: 'sig' is the number (int), typically SIGINT.
+    'frame' is the current stack frame (frame object).
+
+    Ensures: The global variable 'interrupted' to 'True', signaling processes to stop.
+    Prints the message indicating the program is terminating.
     """
     global interrupted
     print("\nInterrupção recebida (Ctrl+C). Finalizando processos...")
@@ -107,12 +135,11 @@ def count_total(lines, search):
             print("Interrupted Process")
             break
   
-
+        # Updates shared variables
+        
         lock.acquire() #Enters the critical section 
-
         counter.value += line.count(search.lower())
         processedLines.value += 1
-    
         lock.release()
             
 #Line Counter
@@ -131,10 +158,9 @@ def count_lines(lines, search, queue, index_counter, counter_array):
     '''
     global processedLines
     global lock
-
     results = set()
-    
     for line in lines:
+
         if not interrupted.value:
             line = line.strip().lower()
             if search in line:
@@ -151,14 +177,10 @@ def count_lines(lines, search, queue, index_counter, counter_array):
         else:
             print("Interrupted Process")
             break
-    
-    lock.acquire()#opens the critical section
         
     #puts the sets into the queue
-    queue.put(results)
-
-    lock.release()#closes it
-
+    queue.put(results, block=False)
+    
 #counts the number of times the word appears in isolation
 
 def count_isolated(lines, search, queue, index_counter, counter_array):
@@ -194,20 +216,15 @@ def count_isolated(lines, search, queue, index_counter, counter_array):
 
         #Enters the critical section --------
         lock.acquire()
-
         counter_array[index_counter] = counter
         processedLines.value += 1
         
         lock.release()
         #exits the lock --------
 
-    #Enters the critical section --------
-    lock.acquire()
 
     queue.put(counter) #Adds to the created queue how many times the word was found inside of this block of text
     
-    lock.release()
-    #exits the lock --------
     
 #Selects the operation and runs the process
 
@@ -256,7 +273,6 @@ def main(args):
         func = count_lines
 
     def alarm_handler(signum, frame):
-        print(log_file)
         set_parcial_results(start_time, operation, numLines, len(numLines), counter_array, log_file)
 
     signal.signal(signal.SIGALRM, alarm_handler)
@@ -285,27 +301,30 @@ def main(args):
     for process in processes:
         process.start()
 
-    for process in processes:
-        process.join()
-    
-    q.get()
+    final = 0
+    # Wait for all processes to complete
+    while any(p.is_alive() for p in processes):
+        if operation == "l": # If counting lines containing the word
+        # Increment the final count by the size of each set from the queue
+            final += len(q.get())
+        time.sleep(0.1)
 
     if operation == "l":
-        print("Total de linhas:", len(total_results))
+        totalCount= 0
+        for count in counter_array:
+            totalCount += count
+        print("Total de linhas:", totalCount)
 
     elif operation == "i":
-        print("Total de palavras (isoladas):", sum(total_results))
+        totalCount= 0
+        for count in counter_array:
+            totalCount += count
+        print("Total de palavras (isoladas):", totalCount)
 
     else:
         print("Total de palavras:", str(counter.value))
 
-def sigint_C(sig, frame):
-    print("Terminating Processes")
-    stop.value = 1  # Define a flag de interrupção
-    # Não usamos sys.exit() aqui, pois isso pode causar interrupções no processo principal. 
-    # Vamos apenas marcar a flag de interrupção e deixar o processo continuar no lugar certo.
-
 
 if __name__ == "__main__":
-    signal.signal(signal.SIGINT, sigint_C)
+    signal.signal(signal.SIGINT, signal_handler)
     main(sys.argv[1:])
