@@ -9,9 +9,8 @@ from multiprocessing import Process, Value, Queue, Lock, Array
 import signal 
 import datetime
 
-processedLines = Value("i", 0)
-interrupted = Value("b", False)
-stop = Value("i", 0)
+processedLines = Value("i", 0) #How many lines have been counted for
+interrupted = Value("b", False) #Flag that indicates if the program has been interrupe
 lock = Lock() #initializes the lock that will be used throughtout the program
 
 #Open file and convert it to a list of all lines.
@@ -42,22 +41,19 @@ def set_parcial_results(start_time, mode, numLines, numFiles, array = None, log_
     """
     Logs or prints the partial results of the word counting process.
 
-    Requires: 'start_time' (float) is the timestamp when the program started.
-    'mode' (str) is the counting mode ('c', 'i', or 'l').
-    'numLines' (list[int]) is a list of line counts for each file.
-    'numFiles' (int): Total number of files being processed.
-    'array' (optional, multiprocessing.Array): Array of partial results for each process (modes 'i' and 'l').
-    'log_file' (str): File path for logging results. If empty, results are printed to stdout.
+    Requires: 'start_time' is the timestamp when the program started.
+    'mode' is the counting mode ('c', 'i', or 'l').
+    'numLines' is a list of line counts for each file.
+    'numFiles' is the total number of files being processed.
+    'array' is an array of partial results for each process (modes 'i' and 'l').
+    'log_file' is the file path for logging results. If empty, results are printed to stdout.
 
-    Ensures: The total word or line count ('count_atm') and the number of processed and remaining files.
-    Outputs th results in the format: [timestamp] [elapsed_time] [count_atm] [processedFiles] [remainingFiles]
-    Appends results 
-    
-
+    Ensures: Outputs the results in the format: [timestamp] [elapsed_time] [count_atm] [processedFiles] [remainingFiles]
     """
     global processedLines
     global counter
-
+    
+    #Current timestamp and elapsed time since start
     current_time = datetime.datetime.now()
     timestamp = current_time.strftime("%d/%m/%Y-%H:%M:%S")
     elapsed_time = round((time.time() - start_time) * 1000000)
@@ -92,6 +88,7 @@ def set_parcial_results(start_time, mode, numLines, numFiles, array = None, log_
         print(result)
 
     temp = numFiles - processedFiles #Calculates how many files are still pending to be fully processed
+    #Stops the signal from repeating once all the files have been processed
     if temp == 0: 
         signal.setitimer(signal.ITIMER_REAL, 0)
 
@@ -109,9 +106,11 @@ def signal_handler(sig, frame):
     Prints the message indicating the program is terminating.
     """
     global interrupted
-    print("\nInterrupção recebida (Ctrl+C). Finalizando processos...")
+    print("\nInterrupt received (Ctrl+C). Finalizing processes...")
     interrupted.value = True 
 
+
+#Count all the occurances 
 
 def count_total(lines, search):
     """
@@ -141,6 +140,7 @@ def count_total(lines, search):
         counter.value += line.count(search.lower())
         processedLines.value += 1
         lock.release()
+   
             
 #Line Counter
 
@@ -180,6 +180,7 @@ def count_lines(lines, search, queue, index_counter, counter_array):
         
     #puts the sets into the queue
     queue.put(results, block=False)
+    
     
 #counts the number of times the word appears in isolation
 
@@ -256,7 +257,7 @@ def main(args):
     processes = []
     start = 0
     
-    #Define what function to execute
+    #Define what function to execute and initialize the needed shared memories
     if operation == "i":
         q = Queue()
         counter_array = Array("i", n_process)
@@ -272,6 +273,7 @@ def main(args):
         counter_array = Array("i", n_process)
         func = count_lines
 
+    #Initialize ALARM signal to rn partial results
     def alarm_handler(signum, frame):
         set_parcial_results(start_time, operation, numLines, len(numLines), counter_array, log_file)
 
@@ -301,28 +303,28 @@ def main(args):
     for process in processes:
         process.start()
 
+    #Clean queue so that it doesn't jam processes
     final = 0
     # Wait for all processes to complete
     while any(p.is_alive() for p in processes):
         if operation == "l": # If counting lines containing the word
-        # Increment the final count by the size of each set from the queue
             final += len(q.get())
-        time.sleep(0.1)
+        time.sleep(0.1) # Avoid busy-waiting; sleep briefly between checks
 
     if operation == "l":
         totalCount= 0
         for count in counter_array:
             totalCount += count
-        print("Total de linhas:", totalCount)
+        print("Total of lines counted:", totalCount)  
 
     elif operation == "i":
         totalCount= 0
         for count in counter_array:
             totalCount += count
-        print("Total de palavras (isoladas):", totalCount)
+        print("Total of isolated words counted:", totalCount)
 
-    else:
-        print("Total de palavras:", str(counter.value))
+    else: # Default mode ('c'), total word count mode
+        print("Total of words counted:", str(counter.value))
 
 
 if __name__ == "__main__":

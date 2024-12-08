@@ -40,5 +40,3 @@ Isso pode fazer com que o tempo de execução de cada processo seja ligeiramente
 
 - O programa considera uma palavra como qualquer sequência de caracteres separado por espaços brancos.
 - Os resultados foram comparados aos de comandos como o grep e o "Ctrl + F" do VSCode, então a implementação segue a mesma destes comandos.
-- Os resultados e tempo de execução de cada processo é exibido juntamente com o resultado da contagem. Esse tempo é medido internamente para cada processo.
-- Mesmo não sendo específicado no enuniciado, o Ctrl+C revela também resultados parciais.
