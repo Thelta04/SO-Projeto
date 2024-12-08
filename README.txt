@@ -26,8 +26,6 @@ e contagem das linhas distintas onde a palavra aparece.
 o que pode resultar num processamento desigual, pois as linhas podem ter tamanhos diferentes. 
 Isso pode fazer com que o tempo de execução de cada processo seja ligeiramente diferente.
 
-- Não é confirmada se a soma dos counts no Array e os resultados no Queue são iguais.
-
 
 ### Abordagem para a divisão dos ficheiros:
 

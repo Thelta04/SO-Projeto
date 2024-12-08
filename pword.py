@@ -9,8 +9,8 @@ from multiprocessing import Process, Value, Queue, Lock, Array
 import signal 
 import datetime
 
-processedLines = Value("i", 0) #How many lines have been counted for
-interrupted = Value("b", False) #Flag that indicates if the program has been interrupe
+processedLines = Value("i", 0)
+interrupted = Value("b", False)
 lock = Lock() #initializes the lock that will be used throughtout the program
 
 #Open file and convert it to a list of all lines.
@@ -41,12 +41,12 @@ def set_parcial_results(start_time, mode, numLines, numFiles, array = None, log_
     """
     Logs or prints the partial results of the word counting process.
 
-    Requires: 'start_time' is the timestamp when the program started.
-    'mode' is the counting mode ('c', 'i', or 'l').
-    'numLines' is a list of line counts for each file.
-    'numFiles' is the total number of files being processed.
-    'array' is an array of partial results for each process (modes 'i' and 'l').
-    'log_file' is the file path for logging results. If empty, results are printed to stdout.
+    Requires: 'start_time' (float) is the timestamp when the program started.
+    'mode' (str) is the counting mode ('c', 'i', or 'l').
+    'numLines' (list[int]) is a list of line counts for each file.
+    'numFiles' (int): Total number of files being processed.
+    'array' (optional, multiprocessing.Array): Array of partial results for each process (modes 'i' and 'l').
+    'log_file' (str): File path for logging results. If empty, results are printed to stdout.
 
     Ensures: Outputs the results in the format: [timestamp] [elapsed_time] [count_atm] [processedFiles] [remainingFiles]
     """
@@ -88,7 +88,6 @@ def set_parcial_results(start_time, mode, numLines, numFiles, array = None, log_
         print(result)
 
     temp = numFiles - processedFiles #Calculates how many files are still pending to be fully processed
-    #Stops the signal from repeating once all the files have been processed
     if temp == 0: 
         signal.setitimer(signal.ITIMER_REAL, 0)
 
@@ -109,8 +108,6 @@ def signal_handler(sig, frame):
     print("\nInterrupt received (Ctrl+C). Finalizing processes...")
     interrupted.value = True 
 
-
-#Count all the occurances 
 
 def count_total(lines, search):
     """
@@ -140,7 +137,8 @@ def count_total(lines, search):
         counter.value += line.count(search.lower())
         processedLines.value += 1
         lock.release()
-   
+               
+            
             
 #Line Counter
 
@@ -179,9 +177,10 @@ def count_lines(lines, search, queue, index_counter, counter_array):
             break
         
     #puts the sets into the queue
-    queue.put(results, block=False)
+    queue.put(results)
     
-    
+
+
 #counts the number of times the word appears in isolation
 
 def count_isolated(lines, search, queue, index_counter, counter_array):
@@ -273,7 +272,6 @@ def main(args):
         counter_array = Array("i", n_process)
         func = count_lines
 
-    #Initialize ALARM signal to rn partial results
     def alarm_handler(signum, frame):
         set_parcial_results(start_time, operation, numLines, len(numLines), counter_array, log_file)
 
@@ -303,28 +301,36 @@ def main(args):
     for process in processes:
         process.start()
 
-    #Clean queue so that it doesn't jam processes
     final = 0
     # Wait for all processes to complete
     while any(p.is_alive() for p in processes):
         if operation == "l": # If counting lines containing the word
+        # Increment the final count by the size of each set from the queue
             final += len(q.get())
         time.sleep(0.1) # Avoid busy-waiting; sleep briefly between checks
 
     if operation == "l":
-        totalCount= 0
-        for count in counter_array:
-            totalCount += count
-        print("Total of lines counted:", totalCount)  
+        print("Total de linhas:", sum(counter_array))
+        #verificação
+        if(final == sum(counter_array)):
+             print("A soma dos contadores é igual á soma das contagens enviadas por mensagem através da Queue.")
+        else:
+             print("A soma dos contadores não é igual á soma das contagens enviadas por mensagem através da Queue.")
+            
 
     elif operation == "i":
-        totalCount= 0
-        for count in counter_array:
-            totalCount += count
-        print("Total of isolated words counted:", totalCount)
+        c = 0
+        print("Total de palavras (isoladas):", sum(counter_array))
+        #verificação 
+        while not q.empty():
+            c += q.get()
+        if (c == sum(counter_array)):
+            print("A soma dos contadores é igual á soma das contagens enviadas por mensagem através da Queue.")
+        else:
+            print("A soma dos contadores não é igual á soma das contagens enviadas por mensagem através da Queue.")
 
-    else: # Default mode ('c'), total word count mode
-        print("Total of words counted:", str(counter.value))
+    else:
+        print("Total de palavras:", str(counter.value))
 
 
 if __name__ == "__main__":
