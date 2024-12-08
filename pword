@@ -67,5 +67,5 @@ if [ "$file_count" -gt 1 ] && [ "$process_number" -gt "$file_count" ];then
     echo "Redefining number of processes to be the number of files."
     process_number="$file_count"
 fi    
-${PYTHON} ${PROGRAM} "$m_mode" "$process_number" "$w_word" $txt_files 
+${PYTHON} ${PROGRAM} "$m_mode" "$process_number" "$interval" "$log_file" "$w_word" $txt_files 
 exit 0
